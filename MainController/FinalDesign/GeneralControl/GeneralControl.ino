@@ -59,11 +59,11 @@ const uint8_t US2_ECHO = 9;
 
 // HW: Sensor/motor counts
 const uint8_t LIDAR_COUNT = 3; // Number of LIDAR sensors.
-const uint8_t US_COUNT = 1; // Number of Ultrasonic sensors.
+const uint8_t US_COUNT = 0; // Number of Ultrasonic sensors.
 const uint8_t MOTOR_COUNT = 8; // Number of haptic motors.
 
 // HW: Array of actual LIDAR mux values (e.g. sensor 0 might correspond to mux value 2, so sensorMuxValues[0] would be 2).
-const uint8_t sensorMuxValues[] = {0, 1, 2}; // The number of terms here must match the value of LIDAR_COUNT.
+const uint8_t sensorMuxValues[] = {2, 1, 0}; // The number of terms here must match the value of LIDAR_COUNT.
 
 // Motor array.
 Motor motorArray[MOTOR_COUNT];
@@ -71,19 +71,19 @@ Motor motorArray[MOTOR_COUNT];
 // HW: Array of actual motor numbers (based on the ports used with the PWM Motor Driver).
 const uint8_t motorPortValues[] = {0, 1, 2, 3, 4, 5, 6, 7}; // The number of terms here must match the value of MOTOR_COUNT.
 
-// HW: For the current design, we want to associate sensor 0 with motors 2 and 3, sensor 1 with motors 1 and 2, and sensor 2 with motor 0.
-// We also want to associate the ultrasonic sensor (sensor 3) with motors 4, 5, and 6. Motor 7 is present but unused. 0 indicates a sensor has no effect on a motor.
+// HW: For the current design, we want to associate sensor 0 with motors 3 and 4, sensor 1 with motors 1 and 2, and sensor 2 with motor 0.
+// We also want to associate the ultrasonic sensor (sensor 3) with motor 6, but we are disabling it temporarily. Motor 7 is present but unused. 0 indicates a sensor has no effect on a motor.
 // The first index is the motor, the second is the sensor. 
 // The inner array should have the same number of entries as the total sensor count. The outer array should have the same number of inner arrays as there are motors.
 // The weights are integers to conserve space. You must multiply the weight you desire by 255 and round down to get the weight to store.
-const uint8_t sensorWeights[][LIDAR_COUNT + US_COUNT] = {{0, 0, 255, 0},  // 0
-                                                        {0, 255, 0, 0},   // 1
-                                                        {127, 127, 0, 0}, // 2
-                                                        {255, 0, 0, 0},   // 3
-                                                        {0, 0, 0, 255},   // 4
-                                                        {0, 0, 0, 255},   // 5
-                                                        {0, 0, 0, 255},   // 6
-                                                        {0, 0, 0, 0}};    // 7
+const uint8_t sensorWeights[][LIDAR_COUNT + US_COUNT] = {{0, 0, 255},  // 0
+                                                        {0, 255, 0},   // 1
+                                                        {0, 255, 0},   // 2
+                                                        {255, 0, 0},   // 3
+                                                        {255, 0, 0},   // 4
+                                                        {0, 0, 0},   // 5
+                                                        {0, 0, 0},   // 6
+                                                        {0, 0, 0}};    // 7
 
 TFMini tfmini; // The sensor object.
 
@@ -197,7 +197,7 @@ void loop()
       Serial.println(currentSensor);
     }
     // Set mux for current sensor.
-    setMux(currentSensor);
+    setMux(sensorMuxValues[currentSensor]);
   
     // Take LIDAR distance measurement
     tfmini.externalTrigger();
@@ -216,7 +216,7 @@ void loop()
   {
     // HW: Add code to differentiate between US1 and US2 based on the value of currentSensor and take measurements for each.
     
-    if (DEBUG_MODE) Serial.println("Pinging US2");
+    /*if (DEBUG_MODE) Serial.println("Pinging US2");
     // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
     // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
     digitalWrite(US2_TRIG, LOW);
@@ -228,7 +228,7 @@ void loop()
     // Read the signal from the sensor: a HIGH pulse whose
     // duration is the time (in microseconds) from the sending
     // of the ping to the reception of its echo off of an object.
-    uint32_t pulseTime = pulseIn(US2_ECHO, HIGH, 100000); // The pulse time for the measurement.
+    uint32_t pulseTime = pulseIn(US2_ECHO, HIGH, 10000); // The pulse time for the measurement.
 
     if (pulseTime > 0) // Only keep valid measurements.
     {
@@ -239,7 +239,7 @@ void loop()
     {
       Serial.print(distances[currentSensor]);
       Serial.println(" cm");
-    }
+    }*/
   }
 
   if (DEBUG_MODE) Serial.println("Updating motors...");
@@ -255,7 +255,7 @@ void loop()
         }
     }
   }
-
+  
   // Display the measurement.
   if (DEBUG_MODE)
   {
