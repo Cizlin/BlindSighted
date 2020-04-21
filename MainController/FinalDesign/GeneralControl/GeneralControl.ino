@@ -1,4 +1,4 @@
-// Sensor control program for Blindsighted. Ver. 1.00, 1/21/2020
+// Sensor control program for Blindsighted. Ver. 1.01, 4/21/2020
 // Written in collaboration by Garrisen Cizmich and Jonah Cullen, including libraries created by Peter Jansen and Adafruit.
 // Reads distance inputs from each sensor and adjusts motor response accordingly.
 // Note: If hardware is adjusted in any way (due to sensor or motor changes), you will have to change some of this code.
@@ -36,7 +36,7 @@
 #include "Motor.h"
 
 // Switch for enabling debug mode.
-const bool DEBUG_MODE = false;
+const bool DEBUG_MODE = true;
 
 // Create the PWM object for the servo driver using the default address (0x40).
 // The maximum pulse length is 4096 (0 - 4095).
@@ -59,7 +59,7 @@ const uint8_t US2_ECHO = 9;
 
 // HW: Sensor/motor counts
 const uint8_t LIDAR_COUNT = 3; // Number of LIDAR sensors.
-const uint8_t US_COUNT = 0; // Number of Ultrasonic sensors.
+const uint8_t US_COUNT = 1; // Number of Ultrasonic sensors.
 const uint8_t MOTOR_COUNT = 8; // Number of haptic motors.
 
 // HW: Array of actual LIDAR mux values (e.g. sensor 0 might correspond to mux value 2, so sensorMuxValues[0] would be 2).
@@ -76,14 +76,14 @@ const uint8_t motorPortValues[] = {0, 1, 2, 3, 4, 5, 6, 7}; // The number of ter
 // The first index is the motor, the second is the sensor. 
 // The inner array should have the same number of entries as the total sensor count. The outer array should have the same number of inner arrays as there are motors.
 // The weights are integers to conserve space. You must multiply the weight you desire by 255 and round down to get the weight to store.
-const uint8_t sensorWeights[][LIDAR_COUNT + US_COUNT] = {{0, 0, 255},  // 0
-                                                        {0, 255, 0},   // 1
-                                                        {0, 255, 0},   // 2
-                                                        {255, 0, 0},   // 3
-                                                        {255, 0, 0},   // 4
-                                                        {0, 0, 0},   // 5
-                                                        {0, 0, 0},   // 6
-                                                        {0, 0, 0}};    // 7
+const uint8_t sensorWeights[MOTOR_COUNT][LIDAR_COUNT + US_COUNT] = {{0, 0, 255, 0},  // 0
+                                                                    {0, 255, 0, 0},  // 1
+                                                                    {0, 255, 0, 0},  // 2
+                                                                    {255, 0, 0, 0},  // 3
+                                                                    {255, 0, 0, 0},  // 4
+                                                                    {0, 0, 0, 255},  // 5
+                                                                    {0, 0, 0, 255},  // 6
+                                                                    {0, 0, 0, 0}};   // 7
 
 TFMini tfmini; // The sensor object.
 
@@ -153,11 +153,11 @@ void setup()
     }
     
     setMux(sensorMuxValues[sensorNum]); // Set the mux so that we can access the sensor.
+    delay(50); // Brief delay to ensure mux is set.
     if (!tfmini.begin(&mySerial))
     {
       if (DEBUG_MODE) Serial.println("Readying failed");
     }
-    tfmini.setSingleScanMode();
   }
   
   // Initialize the distance array to have all zeros.
@@ -198,9 +198,9 @@ void loop()
     }
     // Set mux for current sensor.
     setMux(sensorMuxValues[currentSensor]);
-  
+    delay(50); // Delay to ensure mux is set.
+    
     // Take LIDAR distance measurement
-    tfmini.externalTrigger();
     uint16_t distance = tfmini.getDistance();
     if (distance <= 12000) // Discard obviously erroneous measurements.
     {
@@ -216,7 +216,7 @@ void loop()
   {
     // HW: Add code to differentiate between US1 and US2 based on the value of currentSensor and take measurements for each.
     
-    /*if (DEBUG_MODE) Serial.println("Pinging US2");
+    if (DEBUG_MODE) Serial.println("Pinging US2");
     // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
     // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
     digitalWrite(US2_TRIG, LOW);
@@ -228,18 +228,20 @@ void loop()
     // Read the signal from the sensor: a HIGH pulse whose
     // duration is the time (in microseconds) from the sending
     // of the ping to the reception of its echo off of an object.
-    uint32_t pulseTime = pulseIn(US2_ECHO, HIGH, 10000); // The pulse time for the measurement.
+    uint32_t pulseTime = pulseIn(US2_ECHO, HIGH, 15000); // The pulse time for the measurement in microseconds.
 
     if (pulseTime > 0) // Only keep valid measurements.
     {
       // Convert the time into a distance.
       distances[currentSensor] = (pulseTime / 2) / 29.1;     // Divide by 29.1 or multiply by 0.0343
+      delayMicroseconds(15000 - pulseTime); // We need to regulate the time delay within reason, so we delay by however much time was left on the 15 ms counter.
     }
     if (DEBUG_MODE)
     {
       Serial.print(distances[currentSensor]);
       Serial.println(" cm");
-    }*/
+    }
+    delay(35); // Delay for the remaining 35 ms.
   }
 
   if (DEBUG_MODE) Serial.println("Updating motors...");
@@ -302,5 +304,4 @@ void loop()
   currentSensor %= LIDAR_COUNT + US_COUNT;
 
   // Wait some short time before taking the next measurement
-  delay(25);
 }

@@ -1,12 +1,13 @@
+// This header file includes the Motor class, which is used to manage information about the motor's functionality. Developed by Garrisen Cizmich on 4/13/2020.
+// Through sequential #include statements, we reduce the total amount of memory needed by the program.
 #include "TFMini.h"
-// We also need to use the PWM Servo Driver library to run the motor.
 #include <Adafruit_PWMServoDriver.h>
 
 // HW: Motor response constants.
 const uint16_t MIN_DIST = 30; // Minimum distance for response in cm.
 const uint16_t PULSE_THRESHOLD = 50; // The maximum distance at which pulsing begins in cm.
 const uint16_t MAX_DIST = 300; // The maximum distance at which a response occurs in cm.
-const uint8_t PULSE_PERIOD = 5; // The number of loop iterations before the motor state switches while pulsing. Corresponds to a time delay, depending on delay set in loop.
+const uint8_t PULSE_PERIOD = 3; // The number of loop iterations before the motor state switches while pulsing. Corresponds to a time delay, depending on delay set in loop.
 
 class Motor
 {
